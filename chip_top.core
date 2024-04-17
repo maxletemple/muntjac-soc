@@ -38,6 +38,7 @@ filesets:
       - nexys_a7/rtl/chip_top.sv
       - nexys_a7/rtl/ddr.sv
       - nexys_a7/rtl/eth.sv
+      - nexys_a7/rtl/gpio.sv
     file_type: systemVerilogSource
 
   files_rtl_nexys_video:

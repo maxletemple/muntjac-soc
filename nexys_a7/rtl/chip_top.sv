@@ -18,16 +18,16 @@ module chip_top import prim_util_pkg::*; (
   output       sd_reset,
   output       sd_sck,
   // Ethernet
-  output       mdc,
-  inout        mdio,
-  output       rmii_ref_clk,
-  output [1:0] rmii_txd,
-  output       rmii_tx_en,
-  input  [1:0] rmii_rxd,
-  input        rmii_csr_dv,
-  input        rmii_rx_er,
-  output       phy_rst_n,
-  input        phy_irq_i,
+//  output       mdc,
+//  inout        mdio,
+//  output       rmii_ref_clk,
+//  output [1:0] rmii_txd,
+//  output       rmii_tx_en,
+//  input  [1:0] rmii_rxd,
+//  input        rmii_csr_dv,
+//  input        rmii_rx_er,
+//  output       phy_rst_n,
+//  input        phy_irq_i,
   // DDR
   output [12:0] ddr2_sdram_addr,
   output [2:0]  ddr2_sdram_ba,
@@ -42,7 +42,10 @@ module chip_top import prim_util_pkg::*; (
   inout  [1:0]  ddr2_sdram_dqs_p,
   output [0:0]  ddr2_sdram_odt,
   output        ddr2_sdram_ras_n,
-  output        ddr2_sdram_we_n
+  output        ddr2_sdram_we_n,
+  
+  input [3:0] sw,
+  output [15:0] leds
 );
 
   localparam NumCores = 2;
@@ -296,14 +299,15 @@ module chip_top import prim_util_pkg::*; (
   // #region IO Switch //
 
   // Exclude the fixed error sink located at offset 0.
-  localparam NumIoDevice = 4 + EnableEth;
+  localparam NumIoDevice = 6 + EnableEth;
 
   // Error sink located at offset 0.
   localparam ClintIoIdx = 1;
   localparam PlicIoIdx = 2;
   localparam UartIoIdx = 3;
   localparam SdhciIoIdx = 4;
-  localparam EthIoIdx = 5;
+  localparam GpioIdx = 5;
+  localparam EthIoIdx = 6;
 
   localparam [AddrWidth-1:0] ClintBaseAddr = 'h11400000;
   localparam [AddrWidth-1:0] ClintBaseMask = 'h    FFFF;
@@ -319,6 +323,9 @@ module chip_top import prim_util_pkg::*; (
 
   localparam [AddrWidth-1:0] EthBaseAddr   = 'h10100000;
   localparam [AddrWidth-1:0] EthBaseMask   = 'h   7FFFF;
+  
+  localparam [AddrWidth-1:0] GpioBaseAddr  = 'h12000000;
+  localparam [AddrWidth-1:0] GpioBaseMask  = 'h      FF;
 
   `TL_DECLARE_ARR(64, AddrWidth, DeviceSourceWidth, 1, io_ch, [NumIoDevice:0]);
 
@@ -327,6 +334,7 @@ module chip_top import prim_util_pkg::*; (
     generate_socket_address_base[PlicIoIdx - 1] = PlicBaseAddr;
     generate_socket_address_base[UartIoIdx - 1] = UartBaseAddr;
     generate_socket_address_base[SdhciIoIdx - 1] = SdhciBaseAddr;
+    generate_socket_address_base[GpioIdx - 1] = GpioBaseAddr;
     if (EnableEth) generate_socket_address_base[EthIoIdx - 1] = EthBaseAddr;
   endfunction
 
@@ -335,6 +343,7 @@ module chip_top import prim_util_pkg::*; (
     generate_socket_address_mask[PlicIoIdx - 1] = PlicBaseMask;
     generate_socket_address_mask[UartIoIdx - 1] = UartBaseMask;
     generate_socket_address_mask[SdhciIoIdx - 1] = SdhciBaseMask;
+    generate_socket_address_mask[GpioIdx - 1] = GpioBaseMask;
     if (EnableEth) generate_socket_address_mask[EthIoIdx - 1] = EthBaseMask;
   endfunction
 
@@ -343,6 +352,7 @@ module chip_top import prim_util_pkg::*; (
     generate_socket_address_link[PlicIoIdx - 1] = PlicIoIdx;
     generate_socket_address_link[UartIoIdx - 1] = UartIoIdx;
     generate_socket_address_link[SdhciIoIdx - 1] = SdhciIoIdx;
+    generate_socket_address_link[GpioIdx - 1] = GpioIdx;
     if (EnableEth) generate_socket_address_link[EthIoIdx - 1] = EthIoIdx;
   endfunction
 
@@ -376,6 +386,23 @@ module chip_top import prim_util_pkg::*; (
 
   // #endregion
   ///////////////////////
+  
+    ////////////////////////////
+  // #region GPIO //
+
+  gpio #(
+    .AddrWidth (AddrWidth),
+    .SourceWidth (DeviceSourceWidth)
+  ) gpio (
+    .clk_i (clk),
+    .rst_ni (rstn),
+    .leds (leds),
+    .sw (sw),
+    `TL_CONNECT_DEVICE_PORT_IDX(link, io_ch, [GpioIdx])
+  );
+
+  // #endregion
+  ////////////////////////////
 
   ////////////////////////////
   // #region PLIC and CLINT //
@@ -509,90 +536,90 @@ module chip_top import prim_util_pkg::*; (
   //////////////////////
   // #region Ethernet //
 
-  logic eth_irq;
-  logic dma_tx_irq;
-  logic dma_rx_irq;
-  logic phy_irq;
+//  logic eth_irq;
+//  logic dma_tx_irq;
+//  logic dma_rx_irq;
+//  logic phy_irq;
 
-  if (EnableEth) begin: eth
+//  if (EnableEth) begin: eth
 
-    `TL_DECLARE(32, 19, DeviceSourceWidth, 1, eth_io);
-    `TL_DECLARE(64, 32, 2, SinkWidth, eth_dma);
+//    `TL_DECLARE(32, 19, DeviceSourceWidth, 1, eth_io);
+//    `TL_DECLARE(64, 32, 2, SinkWidth, eth_dma);
 
-    eth #(
-      .IoDataWidth (32),
-      .IoAddrWidth (19),
-      .IoSourceWidth (DeviceSourceWidth),
-      .DmaSourceWidth (2),
-      .DmaSinkWidth (SinkWidth)
-    ) eth (
-      .clk_i (clk),
-      .rst_ni (rstn),
-      .io_clk_i (io_clk),
-      .mdc,
-      .mdio,
-      .rmii_ref_clk,
-      .rmii_txd,
-      .rmii_tx_en,
-      .rmii_rxd,
-      .rmii_csr_dv,
-      .rmii_rx_er,
-      .phy_rst_n,
-      .phy_irq (phy_irq_i),
-      `TL_CONNECT_DEVICE_PORT(io, eth_io),
-      `TL_CONNECT_HOST_PORT(dma, eth_dma),
-      .eth_irq_o (eth_irq),
-      .dma_tx_irq_o (dma_tx_irq),
-      .dma_rx_irq_o (dma_rx_irq),
-      .phy_irq_o (phy_irq)
-    );
+//    eth #(
+//      .IoDataWidth (32),
+//      .IoAddrWidth (19),
+//      .IoSourceWidth (DeviceSourceWidth),
+//      .DmaSourceWidth (2),
+//      .DmaSinkWidth (SinkWidth)
+//    ) eth (
+//      .clk_i (clk),
+//      .rst_ni (rstn),
+//      .io_clk_i (io_clk),
+//      .mdc,
+//      .mdio,
+//      .rmii_ref_clk,
+//      .rmii_txd,
+//      .rmii_tx_en,
+//      .rmii_rxd,
+//      .rmii_csr_dv,
+//      .rmii_rx_er,
+//      .phy_rst_n,
+//      .phy_irq (phy_irq_i),
+//      `TL_CONNECT_DEVICE_PORT(io, eth_io),
+//      `TL_CONNECT_HOST_PORT(dma, eth_dma),
+//      .eth_irq_o (eth_irq),
+//      .dma_tx_irq_o (dma_tx_irq),
+//      .dma_rx_irq_o (dma_rx_irq),
+//      .phy_irq_o (phy_irq)
+//    );
 
-    tl_adapter #(
-      .HostDataWidth (64),
-      .DeviceDataWidth (32),
-      .HostAddrWidth (AddrWidth),
-      .DeviceAddrWidth (19),
-      .HostSourceWidth (DeviceSourceWidth),
-      .DeviceSourceWidth (DeviceSourceWidth),
-      .HostSinkWidth (1),
-      .DeviceSinkWidth (1),
-      .HostMaxSize (3),
-      .DeviceMaxSize (2),
-      .HostFifo (1'b0),
-      .DeviceFifo (1'b0)
-    ) eth_io_adapter (
-      .clk_i (clk),
-      .rst_ni (rstn),
-      `TL_CONNECT_DEVICE_PORT_IDX(host, io_ch, [EthIoIdx]),
-      `TL_CONNECT_HOST_PORT(device, eth_io)
-    );
+//    tl_adapter #(
+//      .HostDataWidth (64),
+//      .DeviceDataWidth (32),
+//      .HostAddrWidth (AddrWidth),
+//      .DeviceAddrWidth (19),
+//      .HostSourceWidth (DeviceSourceWidth),
+//      .DeviceSourceWidth (DeviceSourceWidth),
+//      .HostSinkWidth (1),
+//      .DeviceSinkWidth (1),
+//      .HostMaxSize (3),
+//      .DeviceMaxSize (2),
+//      .HostFifo (1'b0),
+//      .DeviceFifo (1'b0)
+//    ) eth_io_adapter (
+//      .clk_i (clk),
+//      .rst_ni (rstn),
+//      `TL_CONNECT_DEVICE_PORT_IDX(host, io_ch, [EthIoIdx]),
+//      `TL_CONNECT_HOST_PORT(device, eth_io)
+//    );
 
-    tl_adapter #(
-      .HostDataWidth (64),
-      .DeviceDataWidth (128),
-      .HostAddrWidth (32),
-      .DeviceAddrWidth (AddrWidth),
-      .HostSourceWidth (2),
-      .DeviceSourceWidth (2),
-      .HostSinkWidth (SinkWidth),
-      .DeviceSinkWidth (SinkWidth)
-    ) eth_dma_adapter (
-      .clk_i (clk),
-      .rst_ni (rstn),
-      `TL_CONNECT_DEVICE_PORT(host, eth_dma),
-      `TL_CONNECT_HOST_PORT(device, dma_eth)
-    );
+//    tl_adapter #(
+//      .HostDataWidth (64),
+//      .DeviceDataWidth (128),
+//      .HostAddrWidth (32),
+//      .DeviceAddrWidth (AddrWidth),
+//      .HostSourceWidth (2),
+//      .DeviceSourceWidth (2),
+//      .HostSinkWidth (SinkWidth),
+//      .DeviceSinkWidth (SinkWidth)
+//    ) eth_dma_adapter (
+//      .clk_i (clk),
+//      .rst_ni (rstn),
+//      `TL_CONNECT_DEVICE_PORT(host, eth_dma),
+//      `TL_CONNECT_HOST_PORT(device, dma_eth)
+//    );
   
-  end else begin: dummy_eth
+//  end else begin: dummy_eth
 
-    assign mdc = 1'bz;
-    assign mdio = 1'bz;
-    assign rmii_ref_clk = 1'bz;
-    assign rmii_txd = 2'bzz;
-    assign rmii_tx_en = 1'bz;
-    assign phy_rst_n = 1'bz;
+//    assign mdc = 1'bz;
+//    assign mdio = 1'bz;
+//    assign rmii_ref_clk = 1'bz;
+//    assign rmii_txd = 2'bzz;
+//    assign rmii_tx_en = 1'bz;
+//    assign phy_rst_n = 1'bz;
 
-  end
+//  end
 
   // #endregion
   //////////////////////
@@ -613,13 +640,13 @@ module chip_top import prim_util_pkg::*; (
     edge_trigger[1] = 1'b0;
 
     // Ethernet IRQs are all level-triggered
-    if (EnableEth) begin
-      interrupts[3] = eth_irq;
-      interrupts[4] = dma_tx_irq;
-      interrupts[5] = dma_rx_irq;
-      interrupts[6] = phy_irq;
-      edge_trigger[6:3] = 4'b0;
-    end
+//    if (EnableEth) begin
+//      interrupts[3] = eth_irq;
+//      interrupts[4] = dma_tx_irq;
+//      interrupts[5] = dma_rx_irq;
+//      interrupts[6] = phy_irq;
+//      edge_trigger[6:3] = 4'b0;
+//    end
   end
 
   // endregion
