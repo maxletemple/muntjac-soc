@@ -1,0 +1,12 @@
+===================================
+Configuration Memory information
+===================================
+File Format        MCS
+Interface          SPIX4
+Size               16M
+Start Address      0x00000000
+End Address        0x00FFFFFF
+
+Addr1         Addr2         Date                    File(s)
+0x00000000    0x002A99CB    Apr  8 15:02:59 2024    bitstream.bit
+0x00800000    0x00800675    Apr 11 11:02:20 2024    bare_metal.bin

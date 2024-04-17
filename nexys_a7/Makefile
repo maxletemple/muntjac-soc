@@ -36,6 +36,15 @@ firmware.mcs: firmware.bin
 
 firmware: firmware.elf
 
+bare_metal.elf:
+	cd ../bare_metal; make bare_metal.elf
+	cp ../bare_metal/build/bare_metal.elf .
+
+bare_metal.bin: bare_metal.elf
+	$(PREFIX)objcopy $< $@ -O binary
+
+bare_metal: bare_metal.elf
+
 PROJECT_DIR=build/garyguo.net_systems_muntjac_soc_0.1/nexys_a7-vivado
 PROJECT_NAME=garyguo.net_systems_muntjac_soc_0.1
 PROJECT=$(PROJECT_DIR)/$(PROJECT_NAME).xpr
@@ -67,7 +76,10 @@ bitstream.bit: $(PROJECT_DIR)/$(PROJECT_NAME).bit
 	cp $< $@
 
 bitstream.mcs: firmware.bin bitstream.bit
-	vivado -notrace -mode batch -source util/generate_mcs.tcl -tclargs bit
+	vivado -notrace -mode batch -source util/generate_mcs.tcl -tclargs bit firmware
+
+bitstream_bare.mcs: bare_metal.bin bitstream.bit
+	vivado -notrace -mode batch -source util/generate_mcs.tcl -tclargs bit bare_metal
 
 program-flash-firmware: firmware.mcs
 	PART="xc7a100tcsg324-1" CFGMEM_PART="s25fl128sxxxxxx0-spi-x1_x2_x4" PROGRAM="$<" vivado -notrace -mode batch -source ../util/program_flash.tcl
@@ -77,6 +89,9 @@ program-flash: bitstream.mcs
 
 program-bitstream: bitstream.bit
 	PART="xc7a100tcsg324-1" PROGRAM="$<" vivado -notrace -mode batch -source ../util/program_bitstream.tcl
+
+program-flash-bare: bitstream_bare.mcs
+	PART="xc7a100tcsg324-1" CFGMEM_PART="s25fl128sxxxxxx0-spi-x1_x2_x4" PROGRAM="$<" vivado -notrace -mode batch -source ../util/program_flash.tcl
 
 clean:
 	rm -rf build
