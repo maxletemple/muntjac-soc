@@ -6,5 +6,6 @@
 /*/device_tree.dts
 /*/firmware.*
 /*/bitstream.*
+/*/bare_metal.*
 vivado*.log
 vivado*.jou
