@@ -21,7 +21,7 @@ impl Write for Console {
 pub fn console_write(args: core::fmt::Arguments<'_>) {
     let mut guard = CONSOLE.lock();
     guard.write_fmt(args).unwrap();
-    #[cfg(feature = "fbcon")]
+    #[cfg(all(has_display, feature = "fbcon"))]
     {
         if let Some(fbcon) = unsafe { crate::video::get_fbcon() } {
             fbcon.write_fmt(args).unwrap();
@@ -95,7 +95,7 @@ impl log::Log for Logger {
             ) {
                 fmt => {
                     guard.write_fmt(fmt).unwrap();
-                    #[cfg(feature = "fbcon")]
+                    #[cfg(all(has_display, feature = "fbcon"))]
                     {
                         if let Some(fbcon) = unsafe { crate::video::get_fbcon() } {
                             fbcon.write_fmt(fmt).unwrap();
