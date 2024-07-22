@@ -2,10 +2,10 @@ OUTPUT_FORMAT("elf64-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
-__ramStart = 0x00001000;
-__romStart = 0x00000000;
+__ramStart = 0x40000000;
+__ramSize =  0x04ffffff;
 
-__ramSize  = 0x07ffffff;
+__romStart = 0x00000000;
 __romSize  = 0x01ffffff;
 
 MEMORY

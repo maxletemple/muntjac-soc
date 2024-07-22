@@ -12,6 +12,14 @@ _start:
 .option push
 .option norelax
 
+
+    # lla t0, handler
+    # csrw mtvec, t0
+
+    # li t0, 0x40000000
+    # j 0x80
+    # lw t0, 0(t0)
+
     # Initialise all registers to zero
     li x1, 0
     li x2, 0
@@ -45,14 +53,9 @@ _start:
     li x30, 0
     li x31, 0
 
+
     csrr s0, mhartid
     bnez s0, .secondary_start
-
-    # lla a0, __data_start
-    # lla a1, __data_rom_start
-    # lla a2, __data_size
-    # call memcpy
-
     j .relocated
 
 
@@ -85,3 +88,20 @@ _hart1:
     
 _end:
     j _end
+
+.global handler
+.balign 16, 1
+.type handler, @function
+handler:
+    csrr t0, mcause
+    li x1, 0
+    li x2, 1
+    li x3, 2
+    li x4, 3
+    li x5, 4
+    li x6, 5
+    li x7, 6
+    li x8, 7
+    j _start
+
+.option pop
