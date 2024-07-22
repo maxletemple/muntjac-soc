@@ -26,7 +26,7 @@ psf2 = { version = "0.4", default-features = false, optional = true }
 fp-mem = []
 fp-none = ["fp-mem"]
 fbcon = ["psf2"]
-default = ["fp-none", "fbcon"]
+default = ["fp-none"]
 
 [profile.release]
 opt-level = 3

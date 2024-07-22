@@ -83,7 +83,8 @@ mnt_cleanup() {
 trap mnt_cleanup EXIT
 
 echo "I: Bootstrapping rootfs"
-mmdebstrap --architectures=riscv64 --include=debian-ports-archive-keyring unstable $TMP_DIR http://deb.debian.org/debian-ports/
+#debootstrap --arch=riscv64 --include=debian-ports-archive-keyring  unstable $TMP_DIR http://deb.debian.org/debian
+mmdebstrap --architectures=riscv64 --include=debian-ports-archive-keyring unstable $TMP_DIR http://deb.debian.org/debian
 
 echo "I: Updating apt sources"
 chroot $TMP_DIR apt-get update
