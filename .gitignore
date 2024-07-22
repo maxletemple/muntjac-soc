@@ -7,5 +7,6 @@
 /*/firmware.*
 /*/bitstream.*
 /*/bare_metal.*
+/*/bitstream_bare.*
 vivado*.log
 vivado*.jou
