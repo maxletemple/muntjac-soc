@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ ! -f "/etc/debian_version" ]; then
     echo "E: The script can only be run on Debian based systems"
     exit 1
@@ -14,7 +16,8 @@ echo "I: Checking for packages"
 
 # Check if necessary packages are installed
 REQUIRED_PKG="binfmt-support
-debian-ports-archive-keyring
+debian-archive-keyring
+file
 mmdebstrap
 qemu-user-static"
 INSTALLED_PKG=$(dpkg-query -W -f='${Package}\n' $REQUIRED_PKG 2>/dev/null | sort)
@@ -27,18 +30,6 @@ if [ ! -z "$MISSING_PKG" ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         apt-get install -y $MISSING_PKG
-    else
-        exit 1
-    fi
-fi
-
-# Check if the key is actually installed - might not be the case on Ubuntu
-if ! (apt-key export 0xB523E5F3FC4E5F2C 2>/dev/null | grep PGP -q); then
-    echo "I: Missing debian ports keyring"
-    read -p "Do you want to import them using apt-key? [y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        wget -O - https://www.ports.debian.org/archive_2024.key | apt-key add -
     else
         exit 1
     fi
@@ -83,8 +74,7 @@ mnt_cleanup() {
 trap mnt_cleanup EXIT
 
 echo "I: Bootstrapping rootfs"
-#debootstrap --arch=riscv64 --include=debian-ports-archive-keyring  unstable $TMP_DIR http://deb.debian.org/debian
-mmdebstrap --architectures=riscv64 --include=debian-ports-archive-keyring unstable $TMP_DIR http://deb.debian.org/debian
+mmdebstrap --architectures=riscv64 unstable $TMP_DIR http://deb.debian.org/debian/
 
 echo "I: Updating apt sources"
 chroot $TMP_DIR apt-get update
@@ -92,8 +82,3 @@ chroot $TMP_DIR apt-get update
 # Install additional packages
 echo "I: Install additional packages"
 chroot $TMP_DIR apt-get install -y $(cat data/debian_packages.txt)
-
-# Misc patching work
-echo "I: Patching"
-# Remove deprecated warning from which
-sed -i '/deprecated/d' $TMP_DIR/usr/bin/which.debianutils
